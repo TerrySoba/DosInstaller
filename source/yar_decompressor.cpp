@@ -92,6 +92,7 @@ bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
         fclose(out);
 
         int handle = 0;
+
         _dos_open(&filename[0], _A_NORMAL, &handle);
         _dos_setftime(handle, dosDate, dosTime);
         _dos_close(handle);

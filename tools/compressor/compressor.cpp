@@ -89,15 +89,16 @@ std::time_t to_time_t(TP tp) {
 }
 
 
-uint16_t toDosDate(int year, int month, int day)
+uint16_t toDosDate(uint16_t year, uint16_t month, uint16_t day)
 {
+    year -= 1980;
     return 
         (day << 0) | 
         (month << 5) |
-        ((year - 1980) << 9);
+        (year << 9);
 }
 
-uint16_t toDosTime(int hours, int minutes, int seconds)
+uint16_t toDosTime(uint16_t hours, uint16_t minutes, uint16_t seconds)
 {
     return
         (seconds / 2) |
@@ -155,9 +156,8 @@ public:
             auto compressed = compressData(uncompressed);
             uint32_t compressedSize = compressed.size();
             uint32_t filenameSize = filename.size();
-            uint16_t dosDate = toDosDate(hour, minute, second);
-            uint16_t dosTime = toDosTime(year, month, day);
-
+            uint16_t dosDate = toDosDate(year, month, day);
+            uint16_t dosTime = toDosTime(hour, minute, second);
 
             std::cout << "File: " << filename << " (" << (((float)compressedSize / uncompressedSize) * 100) << "%)\n";
 
