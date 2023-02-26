@@ -1,16 +1,23 @@
 #include <stdio.h>
+#include <string>
 #include "version.h"
 #include "yar_decompressor.h"
 
 
 int main()
 {
-    printf("Decompressing file test.yar\n");
-    if (!decompressArchive("test.yar", ""))
+    try
     {
-        fprintf(stderr, "Error during decompression.\n");
+        printf("Decompressing file test.yar\n");
+        decompressArchive("test.yar", "");
+        printf("Build date: %s\n", BUILD_DATE);
+    }
+    catch(const std::string& str)
+    {
+        printf("Error: %s\n", str.c_str());
         return 1;
     }
-    printf("Build date: %s\n", BUILD_DATE);
+    
+    
     return 0;
 }

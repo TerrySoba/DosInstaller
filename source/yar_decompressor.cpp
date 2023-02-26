@@ -5,18 +5,39 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include <string>
 #include <stdint.h>
 #include <dos.h>
 
 const char* FILE_FORMAT_HEADER = "\x01" "yar";
 
-bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
+uint16_t crc16(const char *ptr, int32_t count)
+{
+    uint16_t crc;
+    int8_t i;
+    crc = 0;
+    while (--count >= 0)
+    {
+        crc = crc ^ (int)*ptr++ << 8;
+        i = 8;
+        do
+        {
+            if (crc & 0x8000)
+                crc = crc << 1 ^ 0x1021;
+            else
+                crc = crc << 1;
+        } while (--i);
+    }
+    return (crc);
+}
+
+void decompressArchive(const char* archiveFilename, const char* outputDirectory)
 {
     // first open file
     FILE* fp = fopen(archiveFilename, "rb");
     if (!fp)
     {
-        return false;
+        throw std::string("Could not open archive file: ") + archiveFilename;
     }
 
     // now check signature of file
@@ -26,7 +47,7 @@ bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
     fread(&header[0], headerSize, 1, fp);
     if (strcmp(FILE_FORMAT_HEADER, &header[0]) != 0)
     {
-        return false;
+        throw std::string("Header of archive is incorrect: ") + archiveFilename;
     }
 
     // read number of files in archive
@@ -41,8 +62,6 @@ bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
         // read filename
         uint32_t filenameLegth = 0;
         int bytes = fread(&filenameLegth, sizeof(filenameLegth), 1, fp);
-        // printf("bytes: %d\n", bytes);
-        // printf("len: %d\n", filenameLegth);
 
         // read filename
         std::vector<char> filename(filenameLegth + 1);
@@ -58,13 +77,15 @@ bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
         uint16_t dosTime = 0;
         fread(&dosTime, sizeof(dosTime), 1, fp);
 
+        // read crc16 checksum
+        uint16_t checksum;
+        fread(&checksum, sizeof(checksum), 1, fp);
+
         // now read compressed data
         uint32_t uncompressedSize = 0;
         fread(&uncompressedSize, sizeof(uncompressedSize), 1, fp);
         uint32_t compressedSize = 0;
         fread(&compressedSize, sizeof(compressedSize), 1, fp);
-
-        // printf("orig: %ld comp: %ld\n", uncompressedSize, compressedSize);
 
         std::vector<char> compressed(compressedSize);
         fread(&compressed[0], compressedSize, 1, fp);
@@ -79,13 +100,20 @@ bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
 
         if (!decSize)
         {
-            return false;
+            throw std::string("Decompressed size differs: ") + &filename[0];
+        }
+
+        // calculate crc16 checksum of uncompressed data
+        uint16_t calculatedChecksum = crc16(&uncompressed[0], uncompressedSize);
+        if (calculatedChecksum != checksum)
+        {
+            throw std::string("Checksum is incorrect.");
         }
 
         FILE* out = fopen(&filename[0], "wb");
         if (!out)
         {
-            return false;
+            throw std::string("Could not open file for output: ") + &filename[0];
         }
 
         fwrite(&uncompressed[0], uncompressedSize, 1, out);
@@ -98,5 +126,4 @@ bool decompressArchive(const char* archiveFilename, const char* outputDirectory)
         _dos_close(handle);
     }
 
-    return true;
 }

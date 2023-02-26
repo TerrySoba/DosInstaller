@@ -106,6 +106,31 @@ uint16_t toDosTime(uint16_t hours, uint16_t minutes, uint16_t seconds)
         (hours << 11);
 }
 
+uint16_t crc16(const unsigned char *ptr, int32_t count)
+{
+    uint16_t crc;
+    int8_t i;
+    crc = 0;
+    while (--count >= 0)
+    {
+        crc = crc ^ (int)*ptr++ << 8;
+        i = 8;
+        do
+        {
+            if (crc & 0x8000)
+                crc = crc << 1 ^ 0x1021;
+            else
+                crc = crc << 1;
+        } while (--i);
+    }
+    return (crc);
+}
+
+uint16_t crc16(const std::vector<unsigned char>& data)
+{
+    return crc16(data.data(), data.size());
+}
+
 class CompressedArchive
 {
 public:
@@ -158,8 +183,11 @@ public:
             uint32_t filenameSize = filename.size();
             uint16_t dosDate = toDosDate(year, month, day);
             uint16_t dosTime = toDosTime(hour, minute, second);
+            uint16_t checksum = crc16(uncompressed);
 
-            std::cout << "File: " << filename << " (" << (((float)compressedSize / uncompressedSize) * 100) << "%)\n";
+            std::cout 
+                << "File: " << filename << " (" << (((float)compressedSize / uncompressedSize) * 100)
+                << "%) crc:0x" << std::hex << checksum << std::endl;
 
             // write filename size in bytes, 32bit unsigned
             fwrite(&filenameSize, sizeof(filenameSize), 1, fp);
@@ -171,10 +199,14 @@ public:
             // write DOS time
             fwrite(&dosTime, sizeof(dosTime), 1, fp);
 
+            // write CRC-16 checksum
+            fwrite(&checksum, sizeof(checksum), 1, fp);
+
             // write uncompressed size in bytes, 32bit unsigned
             fwrite(&uncompressedSize, sizeof(uncompressedSize), 1, fp);
             // write compressed size in bytes, 32bit unsigned
             fwrite(&compressedSize, sizeof(compressedSize), 1, fp);
+
             // write compressed data
             fwrite(compressed.data(), compressed.size(), 1, fp);
         }
