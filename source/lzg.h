@@ -32,6 +32,8 @@
 // extern "C" {
 // #endif
 
+#include <stdint.h>
+
 #define LZG_VERSION "1.0.10"   /**< @brief LZG library version string */
 #define LZG_VERNUM  0x0100000a /**< @brief LZG library version number (strictly
                                     incremental) */
@@ -138,9 +140,9 @@
 */
 
 /* Basic types */
-typedef int          lzg_bool_t;   /**< @brief Boolean (@ref LZG_TRUE/@ref LZG_FALSE) */
-typedef int          lzg_int32_t;  /**< @brief Signed 32-bit integer */
-typedef unsigned int lzg_uint32_t; /**< @brief Unsigned 32-bit integer */
+typedef bool          lzg_bool_t;   /**< @brief Boolean (@ref LZG_TRUE/@ref LZG_FALSE) */
+typedef int32_t       lzg_int32_t;  /**< @brief Signed 32-bit integer */
+typedef uint32_t      lzg_uint32_t; /**< @brief Unsigned 32-bit integer */
 
 #define LZG_FALSE 0 /**< @brief Boolean FALSE (see @ref lzg_bool_t) */
 #define LZG_TRUE  1 /**< @brief Boolean TRUE (see @ref lzg_bool_t) */
