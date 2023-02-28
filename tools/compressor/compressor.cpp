@@ -5,6 +5,7 @@
 #include <optional>
 #include <stdexcept>
 #include <filesystem>
+#include <algorithm>
 
 #include "lzg.h"
 
@@ -131,6 +132,8 @@ uint16_t crc16(const std::vector<unsigned char>& data)
     return crc16(data.data(), data.size());
 }
 
+const uint32_t MAX_CHUNK_SIZE = 32000;
+
 class CompressedArchive
 {
 public:
@@ -178,16 +181,10 @@ public:
 
             auto uncompressed = readFile(filenameFull);
             uint32_t uncompressedSize = uncompressed.size();
-            auto compressed = compressData(uncompressed);
-            uint32_t compressedSize = compressed.size();
+            uint16_t checksum = crc16(uncompressed);
             uint32_t filenameSize = filename.size();
             uint16_t dosDate = toDosDate(year, month, day);
             uint16_t dosTime = toDosTime(hour, minute, second);
-            uint16_t checksum = crc16(uncompressed);
-
-            std::cout 
-                << "File: " << filename << " (" << (((float)compressedSize / uncompressedSize) * 100)
-                << "%) crc:0x" << std::hex << checksum << std::endl;
 
             // write filename size in bytes, 32bit unsigned
             fwrite(&filenameSize, sizeof(filenameSize), 1, fp);
@@ -202,13 +199,38 @@ public:
             // write CRC-16 checksum
             fwrite(&checksum, sizeof(checksum), 1, fp);
 
-            // write uncompressed size in bytes, 32bit unsigned
-            fwrite(&uncompressedSize, sizeof(uncompressedSize), 1, fp);
-            // write compressed size in bytes, 32bit unsigned
-            fwrite(&compressedSize, sizeof(compressedSize), 1, fp);
+            uint32_t numberOfChunks = uncompressedSize / MAX_CHUNK_SIZE;
+            if (uncompressedSize % MAX_CHUNK_SIZE != 0)
+            {
+                ++numberOfChunks;
+            }
 
-            // write compressed data
-            fwrite(compressed.data(), compressed.size(), 1, fp);
+            // write number of chunks, 32bit unsigned
+            fwrite(&numberOfChunks, sizeof(numberOfChunks), 1, fp);
+
+            for (uint32_t chunk = 0; chunk < numberOfChunks; ++chunk)
+            {
+                unsigned char* chunkData = &uncompressed[chunk * MAX_CHUNK_SIZE];
+                uint32_t rest = uncompressedSize - (chunk * MAX_CHUNK_SIZE);
+                std::vector<unsigned char> uncompressedChunk(chunkData, chunkData + std::min(MAX_CHUNK_SIZE, rest));
+
+                uint32_t uncompressedChunkSize = uncompressedChunk.size();
+
+                auto compressedChunk = compressData(uncompressedChunk);
+                uint32_t compressedChunkSize = compressedChunk.size();
+                
+                std::cout << "Writing chunk: " << uncompressedChunkSize << " -> " << compressedChunkSize << std::endl;
+
+
+                // write uncompressed size in bytes, 32bit unsigned
+                fwrite(&uncompressedChunkSize, sizeof(uncompressedChunkSize), 1, fp);
+
+                // write compressed size in bytes, 32bit unsigned
+                fwrite(&compressedChunkSize, sizeof(compressedChunkSize), 1, fp);
+
+                // write compressed data
+                fwrite(compressedChunk.data(), compressedChunk.size(), 1, fp);
+            }
         }
 
         fclose(fp);

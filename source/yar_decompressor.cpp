@@ -8,14 +8,15 @@
 #include <string>
 #include <stdint.h>
 #include <dos.h>
+#include <malloc.h>
 
 const char* FILE_FORMAT_HEADER = "\x01" "yar";
 
-uint16_t crc16(const char *ptr, int32_t count)
+uint16_t crc16(const char *ptr, int32_t count, uint16_t initialValue = 0)
 {
     uint16_t crc;
     int8_t i;
-    crc = 0;
+    crc = initialValue;
     while (--count >= 0)
     {
         crc = crc ^ (int)*ptr++ << 8;
@@ -67,7 +68,8 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
         std::vector<char> filename(filenameLegth + 1);
         filename[filenameLegth] = '\0';
         fread(&filename[0], filenameLegth, 1, fp);
-        printf("Filename: %s\n", &filename[0]);
+        printf("Filename: %s ", &filename[0]);
+        fflush(stdout);
 
         // read dos date
         uint16_t dosDate = 0;
@@ -81,34 +83,9 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
         uint16_t checksum;
         fread(&checksum, sizeof(checksum), 1, fp);
 
-        // now read compressed data
-        uint32_t uncompressedSize = 0;
-        fread(&uncompressedSize, sizeof(uncompressedSize), 1, fp);
-        uint32_t compressedSize = 0;
-        fread(&compressedSize, sizeof(compressedSize), 1, fp);
-
-        std::vector<char> compressed(compressedSize);
-        fread(&compressed[0], compressedSize, 1, fp);
-
-        // now uncompress data
-        std::vector<char> uncompressed(uncompressedSize);
-        size_t decSize = LZG_Decode(
-            (unsigned char*)&compressed[0],
-            compressedSize,
-            (unsigned char*)&uncompressed[0],
-            uncompressedSize);
-
-        if (!decSize)
-        {
-            throw std::string("Decompressed size differs: ") + &filename[0];
-        }
-
-        // calculate crc16 checksum of uncompressed data
-        uint16_t calculatedChecksum = crc16(&uncompressed[0], uncompressedSize);
-        if (calculatedChecksum != checksum)
-        {
-            throw std::string("Checksum is incorrect.");
-        }
+        // read number of chunks
+        uint32_t numberOfChunks;
+        fread(&numberOfChunks, sizeof(numberOfChunks), 1, fp);
 
         FILE* out = fopen(&filename[0], "wb");
         if (!out)
@@ -116,8 +93,47 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
             throw std::string("Could not open file for output: ") + &filename[0];
         }
 
-        fwrite(&uncompressed[0], uncompressedSize, 1, out);
+        uint16_t crc = 0;
+
+        for (uint32_t chunk = 0; chunk < numberOfChunks; ++chunk)
+        {
+            // now read compressed data
+            uint32_t uncompressedSize = 0;
+            fread(&uncompressedSize, sizeof(uncompressedSize), 1, fp);
+            uint32_t compressedSize = 0;
+            fread(&compressedSize, sizeof(compressedSize), 1, fp);
+
+            std::vector<char> compressed(compressedSize);
+            fread(&compressed[0], compressedSize, 1, fp);
+
+            // now uncompress data
+            std::vector<char> uncompressed(uncompressedSize);
+            size_t decSize = LZG_Decode(
+                (unsigned char*)&compressed[0],
+                compressedSize,
+                (unsigned char*)&uncompressed[0],
+                uncompressedSize);
+
+            if (!decSize)
+            {
+                throw std::string("Decompression failed: ") + &filename[0];
+            }
+
+            // calculate crc16 checksum of uncompressed data
+            crc = crc16(&uncompressed[0], uncompressedSize, crc);
+
+            fwrite(&uncompressed[0], uncompressedSize, 1, out);
+            printf(".");
+            fflush(stdout);
+        }
         fclose(out);
+
+        printf("\n");
+
+        if (checksum != crc)
+        {
+            throw std::string("Checksum is incorrect.");
+        }
 
         int handle = 0;
 
