@@ -10,6 +10,9 @@
 #include <dos.h>
 #include <malloc.h>
 
+#include <sys/types.h>
+#include <direct.h>
+
 const char* FILE_FORMAT_HEADER = "\x01" "yar";
 
 uint16_t crc16(const char *ptr, int32_t count, uint16_t initialValue = 0)
@@ -57,6 +60,12 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
 
     printf("No. of files: %d\n", fileCount);
 
+    // create output directory
+    if (outputDirectory && outputDirectory[0] != '\0')
+    {
+        mkdir(outputDirectory);
+    }
+
     // now loop over each file in the archive
     for (int i = 0; i < fileCount; ++i)
     {
@@ -87,7 +96,14 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
         uint32_t numberOfChunks;
         fread(&numberOfChunks, sizeof(numberOfChunks), 1, fp);
 
-        FILE* out = fopen(&filename[0], "wb");
+        std::string outputFilename;
+        if (outputDirectory && outputDirectory[0] != '\0')
+        {   
+            outputFilename += std::string(outputDirectory) + "\\";
+        }
+        outputFilename += std::string(&filename[0]);
+
+        FILE* out = fopen(outputFilename.c_str(), "wb");
         if (!out)
         {
             throw std::string("Could not open file for output: ") + &filename[0];

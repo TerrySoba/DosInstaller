@@ -1,6 +1,6 @@
 objects  = main.o yar_decompressor.o decode.o checksum.o
 coptions = -ml -oneatx -xs -zp4 -0 -ad
-dest     = install.exe
+dest     = unyar.exe
 
 BUILD_DATE=`date -R`
 
