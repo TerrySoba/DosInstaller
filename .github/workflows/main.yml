@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
 # Controls when the workflow will run
@@ -13,19 +11,30 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
 
-      - run: ./build.sh
+      - name: Build DOS tool unyar.exe
+        run: ./build.sh
+
+      - name: Build linux tool compressor
+        run: ./build_compressor.sh
+
+      - name: Archive DOS tool unyar.exe
+        uses: actions/upload-artifact@v3
+        with:
+          name: unyar
+          path: source/unyar.exe
+
+      - name: Archive linux tool compressor
+        uses: actions/upload-artifact@v3
+        with:
+          name: compressor
+          path: compressor_build/compressor
 
       # Runs a set of commands using the runners shell
       #- name: Install dependencies
