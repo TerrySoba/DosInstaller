@@ -158,4 +158,5 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
         _dos_close(handle);
     }
 
+    fclose(fp);
 }
