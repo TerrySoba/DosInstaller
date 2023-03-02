@@ -1,7 +1,7 @@
 *.d
 *.o
 *.exe
-*build*
+build/
 *.yar
 settings.json
 version.h
