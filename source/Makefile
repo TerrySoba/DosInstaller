@@ -1,13 +1,19 @@
-objects  = main.o yar_decompressor.o decode.o checksum.o
-coptions = -ml -oneatx -xs -zp4 -0 -ad
-dest     = unyar.exe
+objects_unyar   = main.o yar_decompressor.o decode.o checksum.o
+objects_install = install.o
+coptions  = -ml -oneatx -xs -zp4 -0 -ad
+unyar     = unyar.exe
+install = install.exe
 
 BUILD_DATE=`date -R`
 
-all: $(dest)
+all: $(unyar) $(install)
 
-$(dest): _$(dest)
-	upx -9 --ultra-brute -f --8086 -o$(dest) _$(dest)
+
+$(unyar): _$(unyar)
+	upx -9 --ultra-brute -f --8086 -o$(unyar) _$(unyar)
+
+$(install): _$(install)
+	upx -9 --ultra-brute -f --8086 -o$(install) _$(install)
 
 %.o : %.cpp
 	wpp $(coptions) $<
@@ -21,8 +27,14 @@ main.o: version.h
 version.h: FORCE
 	echo \#define BUILD_DATE \"$(BUILD_DATE)\" > version.h
 
-_$(dest): $(objects)
-	echo "NAME   $@" > game.lnk
-	echo "SYSTEM DOS" >> game.lnk
-	echo "FILE   {$(objects)}" >> game.lnk
-	wlink  @game.lnk
+_$(unyar): $(objects_unyar)
+	echo "NAME   $@" > unyar.lnk
+	echo "SYSTEM DOS" >> unyar.lnk
+	echo "FILE   {$(objects_unyar)}" >> unyar.lnk
+	wlink  @unyar.lnk
+
+_$(install): $(objects_install)
+	echo "NAME   $@" > install.lnk
+	echo "SYSTEM DOS" >> install.lnk
+	echo "FILE   {$(objects_install)}" >> install.lnk
+	wlink  @install.lnk
