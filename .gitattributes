@@ -1,2 +1,2 @@
 * text=auto
-* text eol=crlf
+*.ini text eol=crlf
