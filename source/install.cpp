@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <process.h>
+#include "yar_decompressor.h"
+#include <string>
 
 bool isWhitespace(const char ch)
 {
@@ -35,6 +37,7 @@ struct InstallParameters : public KeyValueHandler {
         copyright = NULL;
         link = NULL;
         directoryName = NULL;
+        archiveName = NULL;
     }
 
     ~InstallParameters()
@@ -45,6 +48,7 @@ struct InstallParameters : public KeyValueHandler {
         free(copyright);
         free(link);
         free(directoryName);
+        free(archiveName);
     }
 
     virtual void handleKeyValue(const char* key, const char* value)
@@ -73,6 +77,10 @@ struct InstallParameters : public KeyValueHandler {
         {
             directoryName = strdup(value);
         }
+        if (strcmp(key, "archive_name") == 0)
+        {
+            archiveName = strdup(value);
+        }
     }
 
     char* targetName;
@@ -81,6 +89,7 @@ struct InstallParameters : public KeyValueHandler {
     char* copyright;
     char* link;
     char* directoryName;
+    char* archiveName;
 };
 
 
@@ -162,26 +171,35 @@ void parseInstallerIni(const char* filename, KeyValueHandler& handler)
 
 int main(int argc, char* argv[])
 {
-    InstallParameters params;
-
-    parseInstallerIni("install.ini", params);
-
-    printf("%s installation\n", params.targetName);
-    printf("Copyright (c) %s %s\n", params.date, params.copyright);
-
-    printf("Install directory: %s\n", params.directoryName);
-
-    char ch = 0;
-
-    while (ch != 'n' && ch != 'N' && ch != 'y' && ch != 'Y')
+    try
     {
-        printf("\nWould you like to change the install directory? [y/n] ");
-        fflush(stdout);
-        ch = getchar();
+        InstallParameters params;
+
+        parseInstallerIni("install.ini", params);
+
+        printf("%s installation\n", params.targetName);
+        printf("Copyright (c) %s %s\n", params.date, params.copyright);
+
+        printf("Install directory: %s\n", params.directoryName);
+
+        char ch = 0;
+
+        while (ch != 'n' && ch != 'N' && ch != 'y' && ch != 'Y')
+        {
+            printf("\nWould you like to change the install directory? [y/n] ");
+            fflush(stdout);
+            ch = getchar();
+        }
+
+        printf("unyar %s %s\n", params.archiveName, params.directoryName);
+
+        decompressArchive(params.archiveName, params.directoryName);
     }
-
-    printf("%d\n", ch);
-
+    catch(std::string ex)
+    {
+        fprintf(stderr, "Error: %s\n", ex.c_str());
+        return 1;
+    }
 
     return 0;
 }
