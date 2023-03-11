@@ -18,7 +18,9 @@ struct Arguments
 void printUsage(const std::string &commandName)
 {
     std::cerr << "Usage: " << commandName << " INPUT... OUTPUT\n\n"
-              << "Compresses given INPUT(s) to given output file." << std::endl;
+              << "Compresses given INPUT(s) to given output file.\n\n"
+              << "Build date: " << BUILD_DATE << "\n"
+              << "https://github.com/TerrySoba/DosInstaller" << std::endl;
 }
 
 std::optional<Arguments> parseCommandLineArguments(int argc, char *argv[])
@@ -269,7 +271,7 @@ int main(int argc, char *argv[])
     {
         std::cerr << e.what() << std::endl;
         return 1;
-    }
+    } 
     
     return 0;
 }
