@@ -6,6 +6,7 @@
 #include <string>
 #include <sys/types.h>
 #include <direct.h>
+#include <dos.h>
 
 bool isWhitespace(const char ch)
 {
@@ -179,6 +180,18 @@ void parseInstallerIni(const char* filename, KeyValueHandler& handler)
     fclose(fp);
 }
 
+
+char toUpperCase(char ch)
+{
+    if (ch >= 'a' && ch <= 'z')
+    {
+        ch -= 'a' - 'A';
+    }
+    return ch;
+}
+
+const int BUF_SIZE = 128;
+
 int main(int argc, char* argv[])
 {
     try
@@ -188,34 +201,72 @@ int main(int argc, char* argv[])
         parseInstallerIni("install.ini", params);
 
         printf("%s installation\n", params.targetName);
-        printf("Copyright (c) %s %s\n", params.date, params.copyright);
+        printf("Copyright (c) %s %s\n\n", params.date, params.copyright);
 
-        printf("Install directory: %s\n", params.directoryName);
+        char targetDrive = toUpperCase('c');
 
-        char ch = 0;
+        bool done = false;
 
-        while (ch != 'n' && ch != 'N' && ch != 'y' && ch != 'Y')
+        char buf[BUF_SIZE];
+
+        do
         {
-            printf("\nWould you like to change the install directory? [y/n] ");
-            fflush(stdout);
-            ch = getchar();
-        }
+            printf("Install drive:     %c\n", targetDrive);
+            printf("Install directory: %s\n", params.directoryName);
 
-        if (ch == 'y' || ch == 'Y')
-        {
-            printf("Please enter new install directory: ");
+
+            printf("Options:\n 1: Change drive\n 2: Change directory\n 3: Install game\n 4: Abort installation\nChoice: ");
             fflush(stdout);
-            char buf[128];
-            scanf("%s", buf);
-            free(params.directoryName);
-            params.directoryName = strdup(buf);
+
+            char ch = getchar();
+
+            switch(ch)
+            {
+                case '1':
+                    printf("Enter new drive: ");
+                    fflush(stdout);
+                    fflush(stdin);
+                    targetDrive = toUpperCase(getchar());
+                    break;
+                case '2':
+                    printf("Please enter new install directory: ");
+                    fflush(stdout);
+                    scanf("%s", buf);
+                    free(params.directoryName);
+                    params.directoryName = strdup(buf);
+                    break;
+                case '3':
+                    done = true;
+                    break;
+                case '4':
+                    printf("Installation aborted!\n");
+                    return 0;
+                    break;
+                default: // do nothing
+                    break;
+            }
+
+            printf("\n\n");
         }
+        while(!done);
+
+        // create directoy path string
+        buf[0] = targetDrive;
+        buf[1] = ':';
+        buf[2] = '\\';
+
+        strncpy(buf + 3, params.directoryName, BUF_SIZE);
+
+        free(params.directoryName);
+        params.directoryName = strdup(buf);
 
         decompressArchive(params.archiveName, params.directoryName);
 
+        unsigned int total;
+        _dos_setdrive(targetDrive - 'A' + 1, &total );
         chdir(params.directoryName);
 
-        printf("\nInstallation finished!\n\nType GAME.EXE to run game.\n");
+        printf("\nInstallation finished!\n\nType %s to run game.\n", params.gameExecutable);
     }
     catch(std::string ex)
     {
