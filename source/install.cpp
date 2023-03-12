@@ -214,10 +214,9 @@ int main(int argc, char* argv[])
             printf("Install drive:     %c\n", targetDrive);
             printf("Install directory: %s\n", params.directoryName);
 
-
             printf("Options:\n 1: Change drive\n 2: Change directory\n 3: Install game\n 4: Abort installation\nChoice: ");
             fflush(stdout);
-
+            fflush(stdin);
             char ch = getchar();
 
             switch(ch)
