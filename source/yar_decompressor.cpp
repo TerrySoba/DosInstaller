@@ -77,7 +77,7 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
         std::vector<char> filename(filenameLegth + 1);
         filename[filenameLegth] = '\0';
         fread(&filename[0], filenameLegth, 1, fp);
-        printf("Filename: %s ", &filename[0]);
+        printf("Decompressing: %s ", &filename[0]);
         fflush(stdout);
 
         // read dos date

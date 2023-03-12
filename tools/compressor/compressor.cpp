@@ -166,6 +166,7 @@ public:
         // now compress each file
         for (const std::string& filenameFull : filesToBeCompressed)
         {
+            std::cout << "Compressing file \"" << filenameFull << "\" " << std::flush;
             auto time = std::filesystem::last_write_time(filenameFull);
             auto t = to_time_t(time);
 
@@ -221,8 +222,7 @@ public:
                 auto compressedChunk = compressData(uncompressedChunk);
                 uint32_t compressedChunkSize = compressedChunk.size();
                 
-                std::cout << "Writing chunk: " << uncompressedChunkSize << " -> " << compressedChunkSize << std::endl;
-
+                std::cout << "." << std::flush;
 
                 // write uncompressed size in bytes, 32bit unsigned
                 fwrite(&uncompressedChunkSize, sizeof(uncompressedChunkSize), 1, fp);
@@ -233,6 +233,7 @@ public:
                 // write compressed data
                 fwrite(compressedChunk.data(), compressedChunk.size(), 1, fp);
             }
+            std::cout << std::endl;
         }
 
         fclose(fp);

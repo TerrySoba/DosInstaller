@@ -1,9 +1,11 @@
+#include "yar_decompressor.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <process.h>
-#include "yar_decompressor.h"
 #include <string>
+#include <sys/types.h>
+#include <direct.h>
 
 bool isWhitespace(const char ch)
 {
@@ -38,6 +40,7 @@ struct InstallParameters : public KeyValueHandler {
         link = NULL;
         directoryName = NULL;
         archiveName = NULL;
+        gameExecutable = NULL;
     }
 
     ~InstallParameters()
@@ -49,6 +52,7 @@ struct InstallParameters : public KeyValueHandler {
         free(link);
         free(directoryName);
         free(archiveName);
+        free(gameExecutable);
     }
 
     virtual void handleKeyValue(const char* key, const char* value)
@@ -81,6 +85,11 @@ struct InstallParameters : public KeyValueHandler {
         {
             archiveName = strdup(value);
         }
+        if (strcmp(key, "game_executable") == 0)
+        {
+            gameExecutable = strdup(value);
+        }
+        
     }
 
     char* targetName;
@@ -90,6 +99,7 @@ struct InstallParameters : public KeyValueHandler {
     char* link;
     char* directoryName;
     char* archiveName;
+    char* gameExecutable;
 };
 
 
@@ -191,9 +201,21 @@ int main(int argc, char* argv[])
             ch = getchar();
         }
 
-        printf("unyar %s %s\n", params.archiveName, params.directoryName);
+        if (ch == 'y' || ch == 'Y')
+        {
+            printf("Please enter new install directory: ");
+            fflush(stdout);
+            char buf[128];
+            scanf("%s", buf);
+            free(params.directoryName);
+            params.directoryName = strdup(buf);
+        }
 
         decompressArchive(params.archiveName, params.directoryName);
+
+        chdir(params.directoryName);
+
+        printf("\nInstallation finished!\n\nType GAME.EXE to run game.\n");
     }
     catch(std::string ex)
     {
