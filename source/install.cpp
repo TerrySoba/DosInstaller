@@ -206,49 +206,51 @@ int main(int argc, char* argv[])
         char targetDrive = toUpperCase('c');
         bool done = false;
 
-        BlueMenu blueMenu;
-
-        do
         {
-            blueMenu.clearScreen();
-            sprintf(buf, "%s installation\nCopyright (c) %s %s", params.targetName, params.date, params.copyright);
-            blueMenu.drawBoxWithCenteredText(10, 2, 50, 5, buf);
-            sprintf(buf, "Install drive:     %c\nInstall directory: %s\n\nOptions:\n 1: Install game\n 2: Change drive\n 3: Change directory\n 4: Abort installation\nChoice: ",
-                targetDrive, params.directoryName);
-            blueMenu.drawBoxWithCenteredText(10, 8, 70, 22, buf);
+            BlueMenu blueMenu;
 
-            fflush(stdin);
-            char ch = getchar();
-
-            switch(ch)
+            do
             {
-                case '2':
-                    blueMenu.drawBoxWithCenteredText(20, 18, 60, 22, "Enter new drive: ");
-                    // printf("Enter new drive: ");
-                    fflush(stdout);
-                    fflush(stdin);
-                    targetDrive = toUpperCase(getchar());
-                    break;
-                case '3':
-                    blueMenu.drawBoxWithCenteredText(20, 17, 60, 22, "Please enter new install directory:\n  >");
-                    // printf("Please enter new install directory: ");
-                    fflush(stdout);
-                    scanf("%s", buf);
-                    free(params.directoryName);
-                    params.directoryName = strdup(buf);
-                    break;
-                case '1':
-                    done = true;
-                    break;
-                case '4':
-                    printf("Installation aborted!\n");
-                    return 0;
-                    break;
-                default: // do nothing
-                    break;
+                blueMenu.clearScreen();
+                sprintf(buf, "%s installation\nCopyright (c) %s %s", params.targetName, params.date, params.copyright);
+                blueMenu.drawBoxWithCenteredText(10, 2, 50, 5, buf);
+                sprintf(buf, "Install drive:     %c\nInstall directory: %s\n\nOptions:\n 1: Install game\n 2: Change drive\n 3: Change directory\n 4: Abort installation\nChoice: ",
+                    targetDrive, params.directoryName);
+                blueMenu.drawBoxWithCenteredText(10, 8, 70, 22, buf);
+
+                fflush(stdin);
+                char ch = getchar();
+
+                switch(ch)
+                {
+                    case '2':
+                        blueMenu.drawBoxWithCenteredText(20, 18, 60, 22, "Enter new drive: ");
+                        // printf("Enter new drive: ");
+                        fflush(stdout);
+                        fflush(stdin);
+                        targetDrive = toUpperCase(getchar());
+                        break;
+                    case '3':
+                        blueMenu.drawBoxWithCenteredText(20, 17, 60, 22, "Please enter new install directory:\n  >");
+                        // printf("Please enter new install directory: ");
+                        fflush(stdout);
+                        scanf("%s", buf);
+                        free(params.directoryName);
+                        params.directoryName = strdup(buf);
+                        break;
+                    case '1':
+                        done = true;
+                        break;
+                    case '4':
+                        printf("Installation aborted!\n");
+                        return 0;
+                        break;
+                    default: // do nothing
+                        break;
+                }
             }
+            while(!done);
         }
-        while(!done);
 
         // create directoy path string
         buf[0] = targetDrive;
