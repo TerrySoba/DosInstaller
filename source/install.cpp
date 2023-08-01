@@ -1,4 +1,5 @@
 #include "yar_decompressor.h"
+#include "blue_menu.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,7 @@
 #include <sys/types.h>
 #include <direct.h>
 #include <dos.h>
+
 
 bool isWhitespace(const char ch)
 {
@@ -190,7 +192,7 @@ char toUpperCase(char ch)
     return ch;
 }
 
-const int BUF_SIZE = 128;
+const int BUF_SIZE = 512;
 
 int main(int argc, char* argv[])
 {
@@ -200,41 +202,42 @@ int main(int argc, char* argv[])
 
         parseInstallerIni("install.ini", params);
 
-        printf("%s installation\n", params.targetName);
-        printf("Copyright (c) %s %s\n\n", params.date, params.copyright);
-
+        char buf[BUF_SIZE];
         char targetDrive = toUpperCase('c');
-
         bool done = false;
 
-        char buf[BUF_SIZE];
+        BlueMenu blueMenu;
 
         do
         {
-            printf("Install drive:     %c\n", targetDrive);
-            printf("Install directory: %s\n", params.directoryName);
+            blueMenu.clearScreen();
+            sprintf(buf, "%s installation\nCopyright (c) %s %s", params.targetName, params.date, params.copyright);
+            blueMenu.drawBoxWithCenteredText(10, 2, 50, 5, buf);
+            sprintf(buf, "Install drive:     %c\nInstall directory: %s\n\nOptions:\n 1: Install game\n 2: Change drive\n 3: Change directory\n 4: Abort installation\nChoice: ",
+                targetDrive, params.directoryName);
+            blueMenu.drawBoxWithCenteredText(10, 8, 70, 22, buf);
 
-            printf("Options:\n 1: Change drive\n 2: Change directory\n 3: Install game\n 4: Abort installation\nChoice: ");
-            fflush(stdout);
             fflush(stdin);
             char ch = getchar();
 
             switch(ch)
             {
-                case '1':
-                    printf("Enter new drive: ");
+                case '2':
+                    blueMenu.drawBoxWithCenteredText(20, 18, 60, 22, "Enter new drive: ");
+                    // printf("Enter new drive: ");
                     fflush(stdout);
                     fflush(stdin);
                     targetDrive = toUpperCase(getchar());
                     break;
-                case '2':
-                    printf("Please enter new install directory: ");
+                case '3':
+                    blueMenu.drawBoxWithCenteredText(20, 17, 60, 22, "Please enter new install directory:\n  >");
+                    // printf("Please enter new install directory: ");
                     fflush(stdout);
                     scanf("%s", buf);
                     free(params.directoryName);
                     params.directoryName = strdup(buf);
                     break;
-                case '3':
+                case '1':
                     done = true;
                     break;
                 case '4':
@@ -244,8 +247,6 @@ int main(int argc, char* argv[])
                 default: // do nothing
                     break;
             }
-
-            printf("\n\n");
         }
         while(!done);
 

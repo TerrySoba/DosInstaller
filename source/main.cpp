@@ -3,7 +3,6 @@
 #include "version.h"
 #include "yar_decompressor.h"
 
-
 struct ComandlineParameters
 {
     const char* archiveName;
