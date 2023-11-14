@@ -1,5 +1,5 @@
 #include "yar_decompressor.h"
-#include "lzg.h"
+#include "exodecrunch.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,11 +9,12 @@
 #include <stdint.h>
 #include <dos.h>
 #include <malloc.h>
+#include <iostream>
 
 #include <sys/types.h>
 #include <direct.h>
 
-const char* FILE_FORMAT_HEADER = "\x01" "yar";
+const char* FILE_FORMAT_HEADER = "\x01" "ya2";
 
 uint16_t crc16(const char *ptr, int32_t count, uint16_t initialValue = 0)
 {
@@ -34,6 +35,59 @@ uint16_t crc16(const char *ptr, int32_t count, uint16_t initialValue = 0)
     }
     return (crc);
 }
+
+
+struct ByteReader
+{
+public:
+    ByteReader(const char* data, size_t size) : m_data((const unsigned char*)data), m_pos(0), m_size(size)
+    {
+    }
+
+    int readByte()
+    {
+        if (m_pos >= m_size)
+        {
+            return EOF;
+        }
+        return m_data[m_pos++];
+    }
+
+private:
+    const unsigned char* m_data;
+    size_t m_pos;
+    size_t m_size;
+};
+
+static int read_byte(void* byteReader)
+{
+    return ((ByteReader*)byteReader)->readByte();
+}
+
+int uncompress(const char* compressed, size_t compressedSize, char* uncompressed, size_t uncompressedSize)
+{
+    ByteReader reader(compressed, compressedSize);
+    exo_decrunch_ctx* context = exo_decrunch_new(MAX_OFFSET, read_byte, &reader);
+
+    int c;
+    int uncompressedBytes = 0; 
+
+    while((c = exo_read_decrunched_byte(context)) != EOF)
+    {
+        if (uncompressedBytes >= uncompressedSize)
+        {
+            printf("Uncompressed buffer is too small.\n");
+            uncompressedBytes = 0;
+            break;
+        }
+        uncompressed[uncompressedBytes++] = c;
+    }
+
+    exo_decrunch_delete(context);
+
+    return uncompressedBytes;
+}
+
 
 void decompressArchive(const char* archiveFilename, const char* outputDirectory)
 {
@@ -124,11 +178,7 @@ void decompressArchive(const char* archiveFilename, const char* outputDirectory)
 
             // now uncompress data
             std::vector<char> uncompressed(uncompressedSize);
-            size_t decSize = LZG_Decode(
-                (unsigned char*)&compressed[0],
-                compressedSize,
-                (unsigned char*)&uncompressed[0],
-                uncompressedSize);
+            size_t decSize = uncompress(&compressed[0], compressed.size(), &uncompressed[0], uncompressed.size());
 
             if (!decSize)
             {

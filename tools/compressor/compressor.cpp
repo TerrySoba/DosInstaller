@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <algorithm>
 
-#include "lzg.h"
+#include "exo_helper.h"
 
 struct Arguments
 {
@@ -43,19 +43,26 @@ std::optional<Arguments> parseCommandLineArguments(int argc, char *argv[])
 
 std::vector<unsigned char> compressData(const std::vector<unsigned char>& data)
 {
-    // Determine maximum size of compressed data
-    lzg_uint32_t maxEncSize = LZG_MaxEncodedSize(data.size());
-    std::vector<unsigned char> encBuf(maxEncSize);
+    struct crunch_options options = CRUNCH_OPTIONS_DEFAULT;
+    options.direction_forward = 1;
+    struct crunch_info info = STATIC_CRUNCH_INFO_INIT;
+    struct buf inbuf;
+    struct buf outbuf;
 
-    // Compress
-    lzg_uint32_t encSize = LZG_Encode(data.data(), data.size(), encBuf.data(), maxEncSize, NULL);
-    if (!encSize)
-    {
-        throw std::runtime_error("Compression failed!");
-    }
+    buf_init(&inbuf);
+    buf_init(&outbuf);
 
-    encBuf.resize(encSize);
-    return encBuf;
+    inbuf.data = (unsigned char*)data.data();
+    inbuf.size = data.size();
+    inbuf.capacity = data.size();
+
+    crunch(&inbuf, 0, NULL, &outbuf, &options, &info);
+    print_crunch_info(LOG_NORMAL, &info);
+
+    std::vector<unsigned char> output((unsigned char*)outbuf.data, (unsigned char*)outbuf.data + outbuf.size);
+
+    buf_free(&outbuf);
+    return output;
 }
 
 std::vector<unsigned char> readFile(const std::string& filename)
@@ -82,7 +89,7 @@ std::vector<unsigned char> readFile(const std::string& filename)
     return data;
 }
 
-const std::string FILE_FORMAT_HEADER = "\x01" "yar";
+const std::string FILE_FORMAT_HEADER = "\x01" "ya2";
 
 
 template<typename TP>

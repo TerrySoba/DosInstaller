@@ -1,5 +1,5 @@
-objects_unyar   = main.o yar_decompressor.o decode.o checksum.o
-objects_install = install.o yar_decompressor.o decode.o checksum.o blue_menu.o
+objects_unyar   = main.o yar_decompressor.o exodecrunch.o
+objects_install = install.o yar_decompressor.o blue_menu.o exodecrunch.o
 coptions  = -ml -oneatx -xs -zp4 -0 -ad
 unyar     = unyar.exe
 install = install.exe
