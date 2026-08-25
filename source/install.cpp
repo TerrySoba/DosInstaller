@@ -265,7 +265,16 @@ int main()
         mkdir(params.directoryName);
         chdir(params.directoryName);
 
+        // if cwd ends with a backslash, remove it
+        size_t cwdLen = strlen(cwd);
+        if (cwdLen > 0 && cwd[cwdLen - 1] == '\\')
+        {
+            cwd[cwdLen - 1] = '\0';
+        }
         snprintf(buf, BUF_SIZE, "%s\\%s", cwd, params.archiveName);
+
+        printf("Installing to %c:\\%s\n\nPlease wait...\n", targetDrive, params.directoryName);
+
 
         int exitCode = system(buf);
         if (exitCode != 0)
