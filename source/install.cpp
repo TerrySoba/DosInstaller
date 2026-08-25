@@ -5,6 +5,7 @@
 #include <string.h>
 #include <string>
 #include <direct.h>
+#include <dos.h>
 
 
 bool isWhitespace(const char ch)
@@ -254,6 +255,10 @@ int main()
         char cwd[BUF_SIZE];
         getcwd(cwd, BUF_SIZE);
 
+        // change to target drive
+        unsigned int total;
+        _dos_setdrive(targetDrive - 'A' + 1, &total );
+
         chdir("\\");
 
         // create directory if it does not exist
@@ -268,7 +273,6 @@ int main()
             fprintf(stderr, "Could not execute %s (exit code %d).\n", params.archiveName, exitCode);
             return 1;
         }
-        
         
         printf("\nInstallation finished!\n\nType %s to run game.\n", params.gameExecutable);
     }
