@@ -1,13 +1,10 @@
-#include "yar_decompressor.h"
 #include "blue_menu.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <sys/types.h>
 #include <direct.h>
-#include <dos.h>
 
 
 bool isWhitespace(const char ch)
@@ -194,7 +191,7 @@ char toUpperCase(char ch)
 
 const int BUF_SIZE = 512;
 
-int main(int argc, char* argv[])
+int main()
 {
     try
     {
@@ -252,22 +249,27 @@ int main(int argc, char* argv[])
             while(!done);
         }
 
-        // create directoy path string
-        buf[0] = targetDrive;
-        buf[1] = ':';
-        buf[2] = '\\';
 
-        strncpy(buf + 3, params.directoryName, BUF_SIZE);
+        // store currect working directory
+        char cwd[BUF_SIZE];
+        getcwd(cwd, BUF_SIZE);
 
-        free(params.directoryName);
-        params.directoryName = strdup(buf);
+        chdir("\\");
 
-        decompressArchive(params.archiveName, params.directoryName);
-
-        unsigned int total;
-        _dos_setdrive(targetDrive - 'A' + 1, &total );
+        // create directory if it does not exist
+        mkdir(params.directoryName);
         chdir(params.directoryName);
 
+        snprintf(buf, BUF_SIZE, "%s\\%s", cwd, params.archiveName);
+
+        int exitCode = system(buf);
+        if (exitCode != 0)
+        {
+            fprintf(stderr, "Could not execute %s (exit code %d).\n", params.archiveName, exitCode);
+            return 1;
+        }
+        
+        
         printf("\nInstallation finished!\n\nType %s to run game.\n", params.gameExecutable);
     }
     catch(std::string ex)
