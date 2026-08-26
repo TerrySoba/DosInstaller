@@ -16,40 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
-      - name: Build DOS tool unyar.exe
+      - name: Build DOS installer
         run: ./build.sh
 
-      - name: Build linux tool compressor
-        run: ./build_compressor.sh
-
-      - name: Archive DOS tool unyar.exe
-        uses: actions/upload-artifact@v3
+      - name: Archive DOS installer
+        uses: actions/upload-artifact@v4
         with:
-          name: unyar
-          path: source/unyar.exe
-
-      - name: Archive linux tool compressor
-        uses: actions/upload-artifact@v3
-        with:
-          name: compressor
-          path: compressor_build/compressor
-
-      # Runs a set of commands using the runners shell
-      #- name: Install dependencies
-      #  run: |
-      #    DEBIAN_FRONTEND=noninteractive sudo apt update
-      #    DEBIAN_FRONTEND=noninteractive sudo apt upgrade -y
-      #    DEBIAN_FRONTEND=noninteractive sudo apt install -y software-properties-common upx make nasm zip git
-
-      # Runs a single command using the runners shell
-      #- name: Build
-      #  run: ./build.sh
-
-      # Now store built game as artifact
-      #- name: Archive build result
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: game-zip
-      #    path: zip/game.zip
+          name: install
+          path: source/install.exe
